@@ -91,16 +91,64 @@ END;
 
 
 
+--3.2.1
 
 
 
 
+SELECT * FROM v$session; 
+SELECT * FROM dba_users;
+
+describe v$session;
+describe dba_users;
+describe dba_tables;
 
 
 
 
+create or replace package Supervision
+	function tauxUtilBase return number;
+	procedure affichInfoTableUser;
+	function conversionF_ED (euros in number) return number;
+end Supervision;
+/
 
 
+CREATE OR REPLACE FUNCTION tauxUtilBase RETURN NUMBER
+IS
+	UserCo NUMBER;
+	userRef NUMBER;
+	taux NUMBER;
+BEGIN
+	SELECT COUNT(*) INTO UserCo FROM v$session;
+	SELECT COUNT(*) INTO userRef FROM dba_users;
+	taux := (UserCo/userRef) * 100; 
+	RETURN(taux);
+END;
+/
+
+
+CREATE OR REPLACE PROCEDURE affichInfoTableUser 
+IS
+	CURSOR curse IS SELECT osuser, COUNT(TABLE_NAME) AS nb FROM v$session, dba_tables WHERE username = owner GROUP BY (osuser);
+BEGIN
+	FOR lig IN curse
+	LOOP
+		dbms_output.put_line('User : '||lig.osuser||' possede : '||lig.nb||' tables.');
+	END LOOP;
+END;
+/
+
+
+
+DECLARE
+	taux NUMBER;
+BEGIN 
+	--taux := tauxUtilBase;
+	--dbms_output.put_line('taux dutilisation de la base master : '||taux||' %');
+	affichInfoTableUser;
+END;
+/
 
 
 
